@@ -3,21 +3,114 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wormhole Simulation</title>
+  <title>Anonymous Feedback</title>
   <style>
+    @font-face {
+      src: url('fonts/Sga-Regular.woff2') format('woff2'),
+           url('fonts/Sga-Regular.woff') format('woff'),
+           url('fonts/Sga-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-family: 'Sga Regular';
+    }
+
+    @font-face {
+      src: url('fonts/Cursive-Galactic.woff2') format('woff2'),
+           url('fonts/Cursive-Galactic.woff') format('woff'),
+           url('fonts/Cursive-Galactic.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-family: 'Cursive Galactic';
+    }
+
     body {
+      font-family: 'Sga Regular', Arial, sans-serif;
       margin: 0;
-      overflow: hidden;
-      background: black;
-      color: white;
+      overflow: hidden; /* Prevent both vertical and horizontal scrolling */
+      background: #004400; /* Dark green background */
+      color: #00FF00; /* Green text color */
     }
     canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+      max-width: 500px;
+      margin: 50px auto;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.8); /* Semi-transparent black background */
+      border: 2px solid #00FF00;
+      box-shadow: 0 0 20px #00FF00;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
       display: block;
+      margin-bottom: 5px;
+      color: #00FF00; /* Green text color */
+    }
+    input, textarea, button, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #00FF00; /* Green border color */
+      border-radius: 5px;
+      background: #001100; /* Dark green background */
+      color: #00FF00; /* Green text color */
+      font-size: 14px;
+    }
+    button {
+      background: #003300; /* Dark green button background */
+      cursor: pointer;
+    }
+    button:hover {
+      background: #005500; /* Lighter green on hover */
     }
   </style>
 </head>
 <body>
   <canvas id="wormhole"></canvas>
+
+  <div class="content">
+    <h1>Contact me</h1>
+    <form method="post" action="https://forms.un-static.com/forms/1d9e034f4ea1871c4a95720eec2a7c46fad6963b">
+      <div class="form-group">
+        <label for="name">Name (optional)</label>
+        <input id="name" name="name" placeholder="Please enter your name (optional)" type="text">
+      </div>
+      <div class="form-group">
+        <label for="email">E-mail address</label>
+        <input id="email" name="email" placeholder="Your e-mail address" type="text">
+      </div>
+      <div class="form-group">
+        <input type="checkbox" id="anonymous" name="anonymous" onclick="toggleEmail()">
+        <label for="anonymous">Submit anonymously</label>
+      </div>
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" cols="40" rows="10" required="required" placeholder="Enter your message"></textarea>
+      </div>
+      <div class="form-group">
+        <button name="submit" type="submit">Send</button>
+      </div>
+    </form>
+    <div class="form-group">
+      <label for="font-select">Choose Font:</label>
+      <select id="font-select" onchange="changeFont()">
+        <option value="SGA">SGA (default)</option>
+        <option value="Cursive">Cursive Galactic</option>
+        <option value="Courier">Courier</option>
+      </select>
+    </div>
+  </div>
 
   <script>
     const canvas = document.getElementById('wormhole');
@@ -27,95 +120,68 @@
 
     const stars = [];
     const numStars = 1000;
+    const speed = 0.05;
 
-    // Initialize stars
     for (let i = 0; i < numStars; i++) {
       stars.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        z: Math.random() * canvas.width,
-        speed: 2,
-        color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+        z: Math.random() * canvas.width
       });
     }
 
-    let speedMultiplier = 1;
-    let colorShift = 0;
-    let viewX = 0;
-    let viewY = 0;
-
-    function draw() {
-      ctx.fillStyle = 'black';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      stars.forEach(star => {
-        const k = 128 / star.z;
-        const px = star.x * k + canvas.width / 2 + viewX;
-        const py = star.y * k + canvas.height / 2 + viewY;
-        const size = (1 - star.z / canvas.width) * 5;
-
-        ctx.beginPath();
-        ctx.arc(px, py, size, 0, 2 * Math.PI);
-        ctx.fillStyle = star.color;
-        ctx.fill();
-
-        // Update position
-        star.z -= star.speed * speedMultiplier;
-
+    function updateStars() {
+      for (let star of stars) {
+        star.z -= speed;
         if (star.z <= 0) {
+          star.x = Math.random() * canvas.width;
+          star.y = Math.random() * canvas.height;
           star.z = canvas.width;
-          star.x = (Math.random() - 0.5) * canvas.width;
-          star.y = (Math.random() - 0.5) * canvas.height;
-          star.color = `hsl(${(Math.random() * 360 + colorShift) % 360}, 100%, 50%)`;
         }
-      });
-
-      requestAnimationFrame(draw);
+      }
     }
 
-    draw();
-
-    window.addEventListener('keydown', (event) => {
-      switch (event.key) {
-        case 'w': // Move up
-          viewY -= 10;
-          break;
-        case 's': // Move down
-          viewY += 10;
-          break;
-        case 'a': // Move left
-          viewX -= 10;
-          break;
-        case 'd': // Move right
-          viewX += 10;
-          break;
-        case 'j': // Look left
-          stars.forEach(star => star.x -= 10);
-          break;
-        case 'l': // Look right
-          stars.forEach(star => star.x += 10);
-          break;
-        case 'i': // Look up
-          stars.forEach(star => star.y -= 10);
-          break;
-        case 'k': // Look down
-          stars.forEach(star => star.y += 10);
-          break;
-        case ';': // Increase speed
-          speedMultiplier += 0.5;
-          break;
-        case 'h': // Decrease speed
-          speedMultiplier = Math.max(0.5, speedMultiplier - 0.5);
-          break;
-        default:
-          // Random color shift for other keys
-          colorShift += 15;
-          stars.forEach(star => {
-            star.color = `hsl(${(Math.random() * 360 + colorShift) % 360}, 100%, 50%)`;
-          });
-          break;
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let star of stars) {
+        const x = (star.x - canvas.width / 2) * (canvas.width / star.z);
+        const y = (star.y - canvas.height / 2) * (canvas.width / star.z);
+        const size = (canvas.width / star.z) * 0.5;
+        ctx.beginPath();
+        ctx.arc(x + canvas.width / 2, y + canvas.height / 2, size, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.closePath();
       }
-    });
+    }
+
+    function animateStars() {
+      updateStars();
+      drawStars();
+      requestAnimationFrame(animateStars);
+    }
+
+    animateStars();
+
+    function toggleEmail() {
+      const emailField = document.getElementById('email');
+      const isChecked = document.getElementById('anonymous').checked;
+      emailField.disabled = isChecked;
+      emailField.required = !isChecked;
+    }
+
+    function changeFont() {
+      const fontSelect = document.getElementById('font-select').value;
+      const body = document.body;
+
+      if (fontSelect === 'SGA') {
+        body.style.fontFamily = "'Sga Regular', Arial, sans-serif";
+      } else if (fontSelect === 'Courier') {
+        body.style.fontFamily = "'Courier New', Courier, monospace";
+      } else if (fontSelect === 'Cursive') {
+        body.style.fontFamily = "'Cursive Galactic', cursive";
+      }
+    }
 
     window.addEventListener('resize', () => {
       canvas.width = window.innerWidth;
